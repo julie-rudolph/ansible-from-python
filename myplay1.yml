@@ -1,0 +1,11 @@
+---
+- name: arp table on Cisco IOS router.
+  hosts: csrs
+  gather_facts: no
+  connection: local
+  tasks:
+  - ios_command: 
+      commands: "show ip arp vrf management"
+      provider: "{{ios_provider}}"
+    register: show
+  - debug: var=vars
