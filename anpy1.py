@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# in git branch dev
 
 from collections import namedtuple
 from ansible.parsing.dataloader import DataLoader
@@ -9,10 +10,16 @@ from ansible.executor.task_queue_manager import TaskQueueManager
 from ansible.plugins.callback import CallbackBase
 import json
 
+global hostresults
+hostresults = {}
+
 class ResultCallback(CallbackBase):
 	def v2_runner_on_ok(self, result, **kwargs):
-		host = result._host
-		print json.dumps({host.name: result._result}, indent=4)
+		theresult = result._host
+		print json.dumps({theresult.name: result._result}, indent=4)
+		self.hostresults = json.dumps({theresult.name: result._result})
+		print type(self.hostresults)
+
 
 Options = namedtuple('Options',
                 ['connection', 'module_path', 'forks', 'become',
@@ -35,9 +42,6 @@ inventory = Inventory(loader=loader, variable_manager=variable_manager,
 
 passwords = dict(vault_pass='secret')
 
-inventory = Inventory(loader=loader, variable_manager=variable_manager,
-                      host_list='inthosts.txt')
-
 variable_manager.set_inventory(inventory)
 
 results_callback = ResultCallback()
@@ -48,7 +52,7 @@ play_src = dict(
 	gather_facts="no",
 	connection="local",
 	tasks=[
-		dict(name="shoipintbrief", register="result", 
+		dict(name="shoipintbrief", register="output", 
 	             action=dict(module="ios_command", args=dict(commands="show ip int brief", provider=dict(host="{{ inventory_hostname }}", username="cisco", password="cisco",transport="cli"))))]
 	)
 
@@ -65,11 +69,12 @@ try:
             stdout_callback=results_callback,
         )
     result = tqm.run(play)
+    print stdout_callback.hostresults
 finally:
     if tqm is not None:
         tqm.cleanup()
 
-print result
+#print result
 
 		
 
